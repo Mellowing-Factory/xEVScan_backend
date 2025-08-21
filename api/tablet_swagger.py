@@ -2,7 +2,7 @@ from flask import request
 from flask_restx import Namespace, Resource, reqparse
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import User, EVScanData
-from extensions import db
+from extensions import db, limiter
 from utils import create_error_response, create_success_response
 
 # Create namespace
@@ -23,6 +23,7 @@ class TabletScanData(Resource):
     @tablet_ns.marshal_with(tablet_ns.models['paginated_scan_response'])
     @tablet_ns.doc(security='Bearer')
     @jwt_required()
+    @limiter.limit("200 per minute")  # Note: order matters - jwt_required first
     @tablet_ns.response(401, 'Authentication Required', tablet_ns.models['error_response'])
     @tablet_ns.response(404, 'User Not Found', tablet_ns.models['error_response'])
     def get(self):

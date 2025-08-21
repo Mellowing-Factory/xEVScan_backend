@@ -2,8 +2,11 @@ from flask import Flask
 from flask_cors import CORS
 from flask_restx import Api
 from config import Config
-from extensions import db, bcrypt, jwt, mail
+from extensions import db, bcrypt, jwt, mail, limiter
 from swagger_models import create_swagger_models
+from flask_migrate import Migrate
+from middleware import setup_rate_limiting, setup_logging
+
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -15,6 +18,12 @@ def create_app(config_class=Config):
     jwt.init_app(app)
     mail.init_app(app)
     CORS(app)
+
+    # After creating app and db instances
+    migrate = Migrate(app, db)
+
+    # After creating app
+    limiter.init_app(app)  # Initialize limiter
     
     # Initialize Swagger API
     api = Api(

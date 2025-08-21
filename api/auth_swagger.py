@@ -2,7 +2,7 @@ from flask import request
 from flask_restx import Namespace, Resource, fields
 from flask_jwt_extended import create_access_token
 from models import User
-from extensions import db
+from extensions import db, limiter
 from utils import send_verification_email, validate_required_fields, create_error_response, create_success_response
 import secrets
 
@@ -11,6 +11,7 @@ auth_ns = Namespace('auth', description='Authentication operations')
 
 @auth_ns.route('/register')
 class AuthRegister(Resource):
+    @limiter.limit("3 per minute")  # Add rate limit decorator
     @auth_ns.expect(auth_ns.models['auth_register'])
     @auth_ns.marshal_with(auth_ns.models['success_response'], code=201)
     @auth_ns.response(400, 'Validation Error', auth_ns.models['error_response'])
@@ -55,6 +56,7 @@ class AuthRegister(Resource):
 
 @auth_ns.route('/login')
 class AuthLogin(Resource):
+    @limiter.limit("5 per minute")  # Add rate limit decorator
     @auth_ns.expect(auth_ns.models['auth_login'])
     @auth_ns.marshal_with(auth_ns.models['auth_response'])
     @auth_ns.response(400, 'Validation Error', auth_ns.models['error_response'])

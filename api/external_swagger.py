@@ -2,7 +2,7 @@ from flask import request
 from flask_restx import Namespace, Resource
 from datetime import datetime
 from models import EVScanData
-from extensions import db
+from extensions import db, limiter
 from utils import validate_required_fields, create_error_response, create_success_response
 
 # Create namespace
@@ -10,6 +10,7 @@ external_ns = Namespace('external', description='External data ingestion operati
 
 @external_ns.route('/scan-data')
 class ExternalScanData(Resource):
+    @limiter.limit("100 per minute")  # Higher limit for data ingestion
     @external_ns.doc('receive_scan_data')
     @external_ns.expect(external_ns.models['scan_data_input'])
     @external_ns.marshal_with(external_ns.models['success_response'], code=201)
@@ -95,6 +96,7 @@ class ExternalScanData(Resource):
 
 @external_ns.route('/scan-data/batch')
 class ExternalBatchScanData(Resource):
+    @limiter.limit("10 per minute")  # Lower limit for batch operations
     @external_ns.doc('receive_batch_scan_data')
     @external_ns.expect(external_ns.models['batch_scan_input'])
     @external_ns.response(201, 'Batch Processing Complete')
